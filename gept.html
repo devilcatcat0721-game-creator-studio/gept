@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEPT Lingo - 全民英檢闖關學習網</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK (v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 已填入您的 Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmylLmXnrJmvtVFZLdwMAU_jLJ8i2JXrA",
+            authDomain: "my-game-8bac0.firebaseapp.com",
+            databaseURL: "https://my-game-8bac0-default-rtdb.firebaseio.com",
+            projectId: "my-game-8bac0",
+            storageBucket: "my-game-8bac0.firebasestorage.app",
+            messagingSenderId: "953796189121",
+            appId: "1:953796189121:web:df55c17a5f41e5234b6d40",
+            measurementId: "G-NFJPK4KFT9"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.googleProvider = provider;
+        window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
+        window.onAuthStateChanged = onAuthStateChanged;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.setDoc = setDoc;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.orderBy = orderBy;
+        window.getDocs = getDocs;
+    </script>
+
+    <style>
+        :root {
+            --primary-green: #58cc02;
+            --primary-green-dark: #46a302;
+            --primary-blue: #1cb0f6;
+            --primary-blue-dark: #1899d6;
+            --primary-orange: #ff9600;
+            --primary-orange-dark: #e58700;
+            --primary-red: #ff4b4b;
+            --primary-purple: #ce82ff;
+            --primary-purple-dark: #a562d4;
+            --bg-color: #131f24;
+            --card-bg: #202f36;
+            --text-color: #ffffff;
+            --text-sub: #8395a7;
+            --border-color: #37464f;
+            --accent-yellow: #ffc800;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'DIN Round', 'Feather', 'Segoe UI', Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* ----- Onboarding Area ----- */
+        .onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(19, 31, 36, 0.98);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .onboarding-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 8px 0 var(--border-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .onboarding-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #fff;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-bottom: 5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover {
+            background-color: #2b3d47;
+            transform: translateY(-2px);
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue-dark);
+            background-color: rgba(28, 176, 246, 0.15);
+            color: var(--primary-blue);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-green);
+            border: none;
+            border-bottom: 5px solid var(--primary-green-dark);
+            border-radius: 16px;
+            color: #fff;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            transition: filter 0.2s, transform 0.1s;
+        }
+
+        .btn-primary:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        .btn-google {
+            background-color: #ffffff;
+            color: #757575;
+            border: 2px solid var(--border-color);
+            border-bottom: 5px solid #d5d5d5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .btn-google:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* ----- Header Bar ----- */
+        header {
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-color);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .user-profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-blue);
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .stat-item.streak { color: var(--primary-orange); }
+        .stat-item.xp { color: var(--accent-yellow); }
+        .stat-item.hearts { color: var(--primary-red); }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            gap: 40px;
+        }
+
+        .nav-sidebar {
+            width: 240px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-sub);
+            cursor: pointer;
+            text-decoration: none;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--card-bg);
+            color: #fff;
+        }
+
+        .nav-btn.active {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            background-color: rgba(28, 176, 246, 0.1);
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ----- Level Map ----- */
+        .map-header {
+            background-color: var(--primary-green);
+            color: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .map-header-info h2 { font-size: 22px; font-weight: 800; }
+        .map-header-info p { opacity: 0.9; font-size: 14px; margin-top: 4px; }
+
+        .tree-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            width: 100%;
+            position: relative;
+            padding-bottom: 50px;
+            min-height: 400px;
+        }
+
+        .node-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+        }
+
+        .node-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: var(--primary-green);
+            border: none;
+            border-bottom: 8px solid var(--primary-green-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .node-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 4px;
+        }
+
+        .node-btn.locked {
+            background-color: #37464f;
+            border-bottom-color: #242d34;
+            color: #52656d;
+            cursor: not-allowed;
+        }
+
+        .node-btn.completed {
+            background-color: var(--accent-yellow);
+            border-bottom-color: #c79c00;
+        }
+
+        .skip-test-card {
+            background-color: var(--card-bg);
+            border: 2px dashed var(--primary-purple);
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* ----- Quiz Screen Area ----- */
+        .quiz-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .quiz-progress-bar {
+            height: 16px;
+            background-color: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .quiz-progress-fill {
+            height: 100%;
+            background-color: var(--primary-green);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .quiz-card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .quiz-question {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .speech-btn {
+            background: var(--primary-blue);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 60px;
+            background-color: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px dashed var(--border-color);
+        }
+
+        .word-chip {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-bottom: 4px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Result Panel Footer */
+        .result-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-top: 2px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .result-panel-content {
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-message {
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-panel.correct {
+            background-color: #153928;
+            border-top-color: var(--primary-green);
+            color: var(--primary-green);
+        }
+
+        .result-panel.wrong {
+            background-color: #391515;
+            border-top-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+
+        /* Leaderboard Page */
+        .leaderboard-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+        }
+
+        .leaderboard-item.me {
+            border-color: var(--primary-blue);
+            background-color: rgba(28, 176, 246, 0.1);
+        }
+
+        .rank {
+            font-weight: 800;
+            font-size: 20px;
+            width: 40px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-sub);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation / Stats Bar -->
+    <header>
+        <div style="font-size: 22px; font-weight: 900; color: var(--primary-green); display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-feather-pointed"></i> GEPT Lingo
+        </div>
+
+        <div class="user-profile-badge" id="user-badge">
+            <img src="https://via.placeholder.com/36" alt="User" class="user-avatar" id="user-avatar-img">
+            <span id="user-display-name">使用者</span>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-item streak"><i class="fa-solid fa-fire"></i> <span id="streak-count">0</span></div>
+            <div class="stat-item xp"><i class="fa-solid fa-bolt"></i> <span id="xp-count">0</span></div>
+            <div class="stat-item hearts"><i class="fa-solid fa-heart"></i> <span id="hearts-count">5</span></div>
+        </div>
+    </header>
+
+    <!-- Main Container Layout -->
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <div class="nav-sidebar">
+            <div class="nav-btn active" id="nav-learn" onclick="switchTab('learn')">
+                <i class="fa-solid fa-house"></i> 學習地圖
+            </div>
+            <div class="nav-btn" id="nav-leaderboard" onclick="switchTab('leaderboard')">
+                <i class="fa-solid fa-trophy"></i> 同級排行榜
+            </div>
+            <div class="nav-btn" onclick="openOnboarding()">
+                <i class="fa-solid fa-sliders"></i> 重設目標/級別
+            </div>
+            <div class="nav-btn" onclick="handleSignOut()">
+                <i class="fa-solid fa-right-from-bracket"></i> 登出帳號
+            </div>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div class="content-area">
+            
+            <!-- SECTION 1: LEARNING MAP VIEW -->
+            <div id="view-map" style="width: 100%; max-width: 600px;">
+                <div class="map-header" id="map-header-bg">
+                    <div class="map-header-info">
+                        <h2 id="current-level-title">初級 - 初試 (聽與讀)</h2>
+                        <p id="current-level-desc">建立基礎核心單字與文法聽力能力</p>
+                    </div>
+                    <i class="fa-solid fa-graduation-cap" style="font-size: 40px; opacity: 0.8;"></i>
+                </div>
+
+                <div class="tree-container" id="tree-container">
+                    <!-- Dynamic level nodes will render here -->
+                </div>
+
+                <div class="skip-test-card">
+                    <h3 style="color: var(--primary-purple); margin-bottom: 8px;"><i class="fa-solid fa-bolt"></i> 能力跳級測試</h3>
+                    <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 15px;">已經有這級別的實力了？挑戰跳級測驗一次解鎖全關卡！</p>
+                    <button class="btn-primary" style="background-color: var(--primary-purple); border-bottom-color: var(--primary-purple-dark);" onclick="startSkipTest()">開始跳級測試</button>
+                </div>
+            </div>
+
+            <!-- SECTION 2: QUIZ / LESSON VIEW -->
+            <div id="view-quiz" class="quiz-container hidden">
+                <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
+                    <i class="fa-solid fa-xmark" style="font-size: 24px; cursor: pointer; color: var(--text-sub);" onclick="quitQuiz()"></i>
+                    <div class="quiz-progress-bar">
+                        <div class="quiz-progress-fill" id="quiz-progress"></div>
+                    </div>
+                </div>
+
+                <div class="quiz-card" id="quiz-card">
+                    <!-- Dynamic quiz card -->
+                </div>
+            </div>
+
+            <!-- SECTION 3: LEADERBOARD VIEW -->
+            <div id="view-leaderboard" class="hidden" style="width: 100%; max-width: 600px;">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2><i class="fa-solid fa-trophy" style="color: var(--accent-yellow);"></i> 同級同試聯賽</h2>
+                    <p style="color: var(--text-sub); margin-top: 5px;" id="lb-subtitle">目前榜單：初級 - 初試</p>
+                </div>
+                <div class="leaderboard-list" id="leaderboard-list">
+                    <!-- Dynamic Leaderboard Items -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Google Login / Onboarding Modal -->
+    <div class="onboarding-overlay" id="onboarding-modal">
+        <!-- Step 0: Google Authentication -->
+        <div class="onboarding-card" id="onboarding-step-auth">
+            <h2 class="onboarding-title">歡迎使用 GEPT Lingo</h2>
+            <p style="color: var(--text-sub); margin-bottom: 25px;">請登入 Google 帳號以同步您的全民英檢學習進度與排行榜記錄。</p>
+            <button class="btn-primary btn-google" onclick="handleGoogleSignIn()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+                使用 Google 帳號繼續
+            </button>
+        </div>
+
+        <!-- Step 1: Level Selection -->
+        <div class="onboarding-card hidden" id="onboarding-step-1">
+            <h2 class="onboarding-title">你目前考到哪一級或目標是哪一級？</h2>
+            <div class="options-grid">
+                <div class="option-btn selected" onclick="selectOption(this, 'level', '初級')">
+                    <span>GEPT 初級 (Elementary)</span>
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="option-btn" onclick="selectOption(this, 'level', '中級')">
+                    <span>GEPT 中級 (Intermediate)</span>
+                </div>
+                <div class="option-btn" onclick="selectOption(this, 'level', '中高級')">
+                    <span>GEPT 中高級 (High-Inter)</span>
+                </div>
+                <div class="option-btn" onclick="selectOption(this, 'level', '高級')">
+                    <span>GEPT 高級 (Advanced)</span>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="nextOnboardingStep(2)">下一步</button>
+        </div>
+
+        <!-- Step 2: Exam Phase Selection -->
+        <div class="onboarding-card hidden" id="onboarding-step-2">
+            <h2 class="onboarding-title">目前是在考別的哪個階段？</h2>
+            <div class="options-grid">
+                <div class="option-btn selected" onclick="selectOption(this, 'phase', '初試')">
+                    <div>
+                        <div style="text-align: left;">初試 (聽力與閱讀)</div>
+                        <div style="font-size: 12px; color: var(--text-sub); text-align: left;">專注客觀題選擇與聽力解析</div>
+                    </div>
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="option-btn" onclick="selectOption(this, 'phase', '複試')">
+                    <div>
+                        <div style="text-align: left;">複試 (口說與寫作)</div>
+                        <div style="font-size: 12px; color: var(--text-sub); text-align: left;">專注句子重組、朗讀與翻譯填空</div>
+                    </div>
+                </div>
+                <div class="option-btn" onclick="selectOption(this, 'phase', '還沒考')">
+                    <div>
+                        <div style="text-align: left;">還沒考 (從頭準備)</div>
+                        <div style="font-size: 12px; color: var(--text-sub); text-align: left;">將優先排定初試基礎課程</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="completeOnboarding()">開始個人化學習！</button>
+        </div>
+    </div>
+
+    <!-- Result Action Panel -->
+    <div class="result-panel hidden" id="result-panel">
+        <div class="result-panel-content">
+            <div class="result-message" id="result-message">
+                <i class="fa-solid fa-circle-check"></i> 太棒了！答對了！
+            </div>
+            <button class="btn-primary" style="width: auto; padding: 12px 30px;" id="result-btn" onclick="checkOrNext()">檢查答案</button>
+        </div>
+    </div>
+
+    <script>
+        /* ----- Global State ----- */
+        let currentUser = null;
+        let userState = {
+            level: '初級',        
+            phase: '初試',        
+            xp: 0,
+            streak: 1,
+            hearts: 5,
+            unlockedNode: 1,      
+            isSkipTest: false
+        };
+
+        let tempSelections = {
+            level: '初級',
+            phase: '初試'
+        };
+
+        let currentQuizQuestions = [];
+        let currentQuestionIdx = 0;
+        let selectedAnswer = null;
+        let correctAnswersInSession = 0;
+        let quizState = 'answering';
+
+        /* ----- Question Bank Dataset ----- */
+        const questionDatabase = {
+            '初級': {
+                '初試': [
+                    { id: 'e_1', type: 'listen_choice', audioText: 'The library will be closed on Sunday.', question: '聽朗讀音訊，選出對應的意思：', options: ['圖書館週日將會關閉', '圖書館週六開到很晚', '博物館週日免費開放', '圖書館週日正常營業'], answer: 0 },
+                    { id: 'e_2', type: 'reading_choice', question: 'Please _____ your shoes before entering the house.', options: ['take off', 'turn on', 'get up', 'look for'], answer: 0 },
+                    { id: 'e_3', type: 'reading_choice', question: 'My brother is looking forward to _____ his favorite pop star.', options: ['see', 'seeing', 'saw', 'seen'], answer: 1 },
+                    { id: 'e_4', type: 'listen_choice', audioText: 'Please turn off the lights when you leave the room.', question: '聽朗讀音訊，選出對應的意思：', options: ['離開房間時請關燈', '進房間時請開燈', '離開前請關掉電視', '不要忘記鎖門'], answer: 0 }
+                ],
+                '複試': [
+                    { id: 'e_r1', type: 'sentence_build', question: '將下列單字重組為正確句子：「他每天搭公車上學。」', words: ['He', 'takes', 'the bus', 'to school', 'every day'], correctOrder: ['He', 'takes', 'the bus', 'to school', 'every day'] },
+                    { id: 'e_r2', type: 'fill_blank', question: '請翻譯補充填空：「你昨天有看那場籃球賽嗎？」<br><br>_____ you watch the basketball game yesterday?', answer: 'Did' }
+                ]
+            },
+            '中級': {
+                '初試': [
+                    { id: 'i_1', type: 'reading_choice', question: 'Despite the heavy rain, the outdoor concert was not _____.', options: ['canceled', 'canceling', 'cancel', 'cancels'], answer: 0 },
+                    { id: 'i_2', type: 'listen_choice', audioText: 'She has been working for this company for over ten years.', question: '聽朗讀音訊，選出對應的正確陳述：', options: ['她剛加入這家公司十天', '她在這家公司工作超過十年了', '她十年前離職了', '她正在找十份工作'], answer: 1 }
+                ],
+                '複試': [
+                    { id: 'i_r1', type: 'sentence_build', question: '將單字重組：「養成規律運動的習慣是重要的。」', words: ['It is', 'important to', 'develop a habit of', 'regular exercise'], correctOrder: ['It is', 'important to', 'develop a habit of', 'regular exercise'] }
+                ]
+            }
+        };
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /* ----- Firebase Authentication ----- */
+        window.addEventListener('load', () => {
+            renderLevelMap(); // 初始化繪製地圖關卡
+
+            const checkAuthInterval = setInterval(() => {
+                if (window.onAuthStateChanged) {
+                    clearInterval(checkAuthInterval);
+                    window.onAuthStateChanged(window.firebaseAuth, async (user) => {
+                        if (user) {
+                            currentUser = user;
+                            document.getElementById('user-avatar-img').src = user.photoURL || 'https://via.placeholder.com/36';
+                            document.getElementById('user-display-name').innerText = user.displayName || '學習者';
+                            
+                            await loadUserData(user.uid);
+                            document.getElementById('onboarding-modal').classList.add('hidden');
+                        } else {
+                            currentUser = null;
+                            document.getElementById('onboarding-step-auth').classList.remove('hidden');
+                            document.getElementById('onboarding-modal').classList.remove('hidden');
+                        }
+                    });
+                }
+            }, 100);
+        });
+
+        async function handleGoogleSignIn() {
+            try {
+                await window.signInWithPopup(window.firebaseAuth, window.googleProvider);
+            } catch (error) {
+                console.error("Google Login Error:", error);
+                alert("Google 登入失敗，請確認 Authentication 是否已啟用 Google 登入功能並設定授權網域。");
+            }
+        }
+
+        async function handleSignOut() {
+            if (confirm("確定要登出嗎？")) {
+                await window.signOut(window.firebaseAuth);
+                location.reload();
+            }
+        }
+
+        /* ----- Firestore Data Synchronization ----- */
+        async function loadUserData(uid) {
+            try {
+                const userDocRef = window.doc(window.firebaseDb, "users", uid);
+                const docSnap = await window.getDoc(userDocRef);
+
+                if (docSnap.exists()) {
+                    userState = { ...userState, ...docSnap.data() };
+                    updateUIHeader();
+                    renderLevelMap();
+                } else {
+                    document.getElementById('onboarding-step-auth').classList.add('hidden');
+                    document.getElementById('onboarding-step-1').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Error loading user data:", err);
+            }
+        }
+
+        async function syncUserDataToCloud() {
+            if (!currentUser) return;
+            try {
+                const userDocRef = window.doc(window.firebaseDb, "users", currentUser.uid);
+                await window.setDoc(userDocRef, {
+                    uid: currentUser.uid,
+                    displayName: currentUser.displayName || '無名氏',
+                    photoURL: currentUser.photoURL || '',
+                    level: userState.level,
+                    phase: userState.phase,
+                    xp: userState.xp,
+                    streak: userState.streak,
+                    hearts: userState.hearts,
+                    unlockedNode: userState.unlockedNode,
+                    lastUpdated: new Date()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Error syncing data:", err);
+            }
+        }
+
+        /* ----- Onboarding Flow ----- */
+        function selectOption(el, category, value) {
+            const parent = el.parentElement;
+            parent.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                const check = btn.querySelector('.fa-check');
+                if (check) check.remove();
+            });
+            el.classList.add('selected');
+            el.insertAdjacentHTML('beforeend', '<i class="fa-solid fa-check"></i>');
+            tempSelections[category] = value;
+        }
+
+        function nextOnboardingStep(step) {
+            document.getElementById('onboarding-step-1').classList.add('hidden');
+            document.getElementById('onboarding-step-2').classList.remove('hidden');
+        }
+
+        async function completeOnboarding() {
+            userState.level = tempSelections.level;
+            userState.phase = tempSelections.phase === '還沒考' ? '初試' : tempSelections.phase;
+            
+            document.getElementById('onboarding-modal').classList.add('hidden');
+            updateUIHeader();
+            renderLevelMap();
+            await syncUserDataToCloud();
+        }
+
+        function openOnboarding() {
+            document.getElementById('onboarding-step-auth').classList.add('hidden');
+            document.getElementById('onboarding-step-2').classList.add('hidden');
+            document.getElementById('onboarding-step-1').classList.remove('hidden');
+            document.getElementById('onboarding-modal').classList.remove('hidden');
+        }
+
+        /* ----- UI Renders ----- */
+        function updateUIHeader() {
+            document.getElementById('streak-count').innerText = userState.streak;
+            document.getElementById('xp-count').innerText = userState.xp;
+            document.getElementById('hearts-count').innerText = userState.hearts;
+
+            document.getElementById('current-level-title').innerText = `${userState.level} - ${userState.phase}`;
+            document.getElementById('current-level-desc').innerText = 
+                userState.phase === '初試' ? '專注聽力與閱讀測驗' : '專注口說朗讀與寫作翻譯';
+        }
+
+        function renderLevelMap() {
+            const container = document.getElementById('tree-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const totalNodes = 5;
+            const offsets = [0, 50, -50, 30, 0];
+
+            for (let i = 1; i <= totalNodes; i++) {
+                const row = document.createElement('div');
+                row.className = 'node-row';
+                row.style.transform = `translateX(${offsets[(i - 1) % offsets.length]}px)`;
+
+                const btn = document.createElement('button');
+                btn.className = 'node-btn';
+                
+                if (i < userState.unlockedNode) {
+                    btn.classList.add('completed');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else if (i === userState.unlockedNode) {
+                    btn.innerHTML = '<i class="fa-solid fa-star"></i>';
+                    btn.onclick = () => startQuiz(false);
+                } else {
+                    btn.classList.add('locked');
+                    btn.innerHTML = '<i class="fa-solid fa-lock"></i>';
+                }
+
+                row.appendChild(btn);
+                container.appendChild(row);
+            }
+        }
+
+        /* ----- Quiz Logic Engine ----- */
+        function startQuiz(isSkip = false) {
+            userState.isSkipTest = isSkip;
+            correctAnswersInSession = 0;
+            currentQuestionIdx = 0;
+
+            const phaseKey = userState.phase;
+            const levelKey = userState.level;
+            
+            const rawBank = (questionDatabase[levelKey] && questionDatabase[levelKey][phaseKey]) 
+                ? questionDatabase[levelKey][phaseKey] 
+                : questionDatabase['初級']['初試'];
+
+            currentQuizQuestions = shuffleArray(rawBank);
+            
+            switchTab('quiz');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            quizState = 'answering';
+            selectedAnswer = null;
+            const q = currentQuizQuestions[currentQuestionIdx];
+            const card = document.getElementById('quiz-card');
+            card.innerHTML = '';
+
+            const pct = (currentQuestionIdx / currentQuizQuestions.length) * 100;
+            document.getElementById('quiz-progress').style.width = `${pct}%`;
+
+            if (q.type === 'reading_choice' || q.type === 'listen_choice') {
+                let html = '';
+                if (q.type === 'listen_choice') {
+                    html += `<div><button class="speech-btn" onclick="playSpeech('${q.audioText}')"><i class="fa-solid fa-volume-high"></i></button> 點擊播放語音題</div>`;
+                }
+                html += `<div class="quiz-question">${q.question}</div>`;
+                html += `<div class="options-grid" style="margin-top: 15px;">`;
+                q.options.forEach((opt, idx) => {
+                    html += `<div class="option-btn" onclick="selectQuizChoice(this, ${idx})">${opt}</div>`;
+                });
+                html += `</div>`;
+                card.innerHTML = html;
+            } 
+            else if (q.type === 'sentence_build') {
+                let html = `<div class="quiz-question">${q.question}</div>`;
+                html += `<div class="word-bank" id="target-sentence-bank"></div>`;
+                html += `<div class="word-bank" id="source-words-bank" style="margin-top: 20px;">`;
+                
+                const shuffledWords = shuffleArray(q.words);
+                shuffledWords.forEach((w) => {
+                    html += `<div class="word-chip" onclick="moveWord(this)">${w}</div>`;
+                });
+                html += `</div>`;
+                card.innerHTML = html;
+            }
+            else if (q.type === 'fill_blank') {
+                let html = `<div class="quiz-question">${q.question}</div>`;
+                html += `<input type="text" id="blank-input" placeholder="請在此輸入英文單字..." style="width: 100%; padding: 15px; font-size: 18px; border-radius: 12px; border: 2px solid var(--border-color); background-color: var(--bg-color); color: #fff; margin-top: 15px;">`;
+                card.innerHTML = html;
+            }
+
+            const panel = document.getElementById('result-panel');
+            panel.className = 'result-panel hidden';
+            const btn = document.getElementById('result-btn');
+            btn.innerText = "檢查答案";
+            btn.style.backgroundColor = "var(--primary-green)";
+        }
+
+        function playSpeech(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('您的瀏覽器不支援語音功能');
+            }
+        }
+
+        function selectQuizChoice(el, idx) {
+            document.querySelectorAll('#quiz-card .option-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedAnswer = idx;
+
+            const panel = document.getElementById('result-panel');
+            panel.classList.remove('hidden');
+            panel.className = 'result-panel';
+            const btn = document.getElementById('result-btn');
+            btn.innerText = "檢查答案";
+        }
+
+        function moveWord(chipEl) {
+            const targetBank = document.getElementById('target-sentence-bank');
+            const sourceBank = document.getElementById('source-words-bank');
+
+            if (chipEl.parentElement.id === 'source-words-bank') {
+                targetBank.appendChild(chipEl);
+            } else {
+                sourceBank.appendChild(chipEl);
+            }
+
+            const panel = document.getElementById('result-panel');
+            panel.classList.remove('hidden');
+            panel.className = 'result-panel';
+        }
+
+        function checkOrNext() {
+            if (quizState === 'answering') {
+                checkAnswer();
+            } else {
+                nextQuestion();
+            }
+        }
+
+        function checkAnswer() {
+            const q = currentQuizQuestions[currentQuestionIdx];
+            let isCorrect = false;
+
+            if (q.type === 'reading_choice' || q.type === 'listen_choice') {
+                isCorrect = (selectedAnswer === q.answer);
+            } 
+            else if (q.type === 'sentence_build') {
+                const currentChips = Array.from(document.querySelectorAll('#target-sentence-bank .word-chip')).map(c => c.innerText.trim());
+                isCorrect = JSON.stringify(currentChips) === JSON.stringify(q.correctOrder);
+            }
+            else if (q.type === 'fill_blank') {
+                const inputVal = document.getElementById('blank-input').value.trim();
+                isCorrect = (inputVal.toLowerCase() === q.answer.toLowerCase());
+            }
+
+            quizState = 'reviewed';
+            const panel = document.getElementById('result-panel');
+            const msg = document.getElementById('result-message');
+            const btn = document.getElementById('result-btn');
+
+            if (isCorrect) {
+                correctAnswersInSession++;
+                panel.className = 'result-panel correct';
+                msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> 答對了！太棒了！';
+            } else {
+                userState.hearts = Math.max(0, userState.hearts - 1);
+                updateUIHeader();
+                panel.className = 'result-panel wrong';
+                msg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> 答錯了！繼續加油！';
+            }
+
+            btn.innerText = "繼續";
+        }
+
+        function nextQuestion() {
+            document.getElementById('result-panel').classList.add('hidden');
+            currentQuestionIdx++;
+
+            if (currentQuestionIdx < currentQuizQuestions.length) {
+                renderQuestion();
+            } else {
+                finishQuizSession();
+            }
+        }
+
+        async function finishQuizSession() {
+            const accuracy = correctAnswersInSession / currentQuizQuestions.length;
+            const earnedXP = Math.round(accuracy * 50) + (userState.isSkipTest ? 50 : 10);
+            
+            userState.xp += earnedXP;
+            
+            if (userState.isSkipTest && accuracy >= 0.8) {
+                userState.unlockedNode = 6;
+                alert(`恭喜通過跳級測試！獲得 ${earnedXP} XP，已解鎖該等級全關卡！`);
+            } else if (!userState.isSkipTest) {
+                userState.unlockedNode++;
+                alert(`完成本關練習！獲得 ${earnedXP} XP！`);
+            } else {
+                alert(`跳級測試未通過（正確率需達 80%），獲得 ${earnedXP} XP。`);
+            }
+
+            updateUIHeader();
+            renderLevelMap();
+            await syncUserDataToCloud();
+            switchTab('learn');
+        }
+
+        function startSkipTest() {
+            startQuiz(true);
+        }
+
+        function quitQuiz() {
+            if (confirm("確定要離開練習嗎？目前的進度將不會儲存。")) {
+                document.getElementById('result-panel').classList.add('hidden');
+                switchTab('learn');
+            }
+        }
+
+        /* ----- Real-Time Leaderboard Fetching ----- */
+        function switchTab(tabName) {
+            document.getElementById('view-map').classList.add('hidden');
+            document.getElementById('view-quiz').classList.add('hidden');
+            document.getElementById('view-leaderboard').classList.add('hidden');
+
+            document.getElementById('nav-learn').classList.remove('active');
+            document.getElementById('nav-leaderboard').classList.remove('active');
+
+            if (tabName === 'learn') {
+                document.getElementById('view-map').classList.remove('hidden');
+                document.getElementById('nav-learn').classList.add('active');
+                renderLevelMap();
+            } else if (tabName === 'quiz') {
+                document.getElementById('view-quiz').classList.remove('hidden');
+            } else if (tabName === 'leaderboard') {
+                document.getElementById('view-leaderboard').classList.remove('hidden');
+                document.getElementById('nav-leaderboard').classList.add('active');
+                renderRealLeaderboard();
+            }
+        }
+
+        async function renderRealLeaderboard() {
+            document.getElementById('lb-subtitle').innerText = `目前榜單：${userState.level} - ${userState.phase}`;
+            const listContainer = document.getElementById('leaderboard-list');
+            listContainer.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i> 載入真實排行榜數據中...</div>';
+
+            try {
+                const usersRef = window.collection(window.firebaseDb, "users");
+                const q = window.query(
+                    usersRef,
+                    window.where("level", "==", userState.level),
+                    window.where("phase", "==", userState.phase)
+                );
+
+                const querySnapshot = await window.getDocs(q);
+                let leaderboardData = [];
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    leaderboardData.push({
+                        uid: data.uid,
+                        name: data.displayName || '學習者',
+                        photoURL: data.photoURL || '',
+                        xp: data.xp || 0,
+                        isMe: currentUser && data.uid === currentUser.uid
+                    });
+                });
+
+                if (currentUser && !leaderboardData.some(item => item.uid === currentUser.uid)) {
+                    leaderboardData.push({
+                        uid: currentUser.uid,
+                        name: currentUser.displayName || '你 (You)',
+                        photoURL: currentUser.photoURL || '',
+                        xp: userState.xp,
+                        isMe: true
+                    });
+                }
+
+                leaderboardData.sort((a, b) => b.xp - a.xp);
+
+                listContainer.innerHTML = '';
+
+                if (leaderboardData.length === 0) {
+                    listContainer.innerHTML = '<div class="empty-state">目前榜單尚無玩家，快成為第一個獲取 XP 的創始成員吧！</div>';
+                    return;
+                }
+
+                leaderboardData.forEach((item, index) => {
+                    const el = document.createElement('div');
+                    el.className = `leaderboard-item ${item.isMe ? 'me' : ''}`;
+                    el.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span class="rank">#${index + 1}</span>
+                            <img src="${item.photoURL || 'https://via.placeholder.com/32'}" style="width:32px; height:32px; border-radius:50%;">
+                            <span style="font-weight: 700;">${item.name} ${item.isMe ? '(你)' : ''}</span>
+                        </div>
+                        <div style="font-weight: 800; color: var(--accent-yellow);">
+                            <i class="fa-solid fa-bolt"></i> ${item.xp} XP
+                        </div>
+                    `;
+                    listContainer.appendChild(el);
+                });
+
+            } catch (err) {
+                console.error("Leaderboard Query Error:", err);
+                listContainer.innerHTML = '<div class="empty-state">讀取排行榜時出錯，請確認 Firestore 安全規則設定。</div>';
+            }
+        }
+    </script>
+</body>
+</html>
